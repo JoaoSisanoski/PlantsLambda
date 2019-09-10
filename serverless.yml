@@ -5,7 +5,10 @@ provider:
   name: aws
   runtime: nodejs10.x
   environment:
-    DYNAMODB_TABLE: ${self:service}-${opt:stage, self:provider.stage}
+    SENSOR_TABLE: ${self:service}-${opt:stage, self:provider.stage}
+    WEATHER_TABLE: ${self:service}-${opt:stage, self:provider.stage}-weather
+    DARK_SKY: ${file(./config/config.json):DARKSKY_API_KEY}
+
   iamRoleStatements:
     - Effect: Allow
       Action:
@@ -15,15 +18,22 @@ provider:
         - dynamodb:PutItem
         # - dynamodb:UpdateItem
         # - dynamodb:DeleteItem
-      Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.DYNAMODB_TABLE}"
+      Resource: 
+        - "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.SENSOR_TABLE}"
+        - "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.WEATHER_TABLE}"
 
 functions:
   create:
     handler: src/create.create
 
+  weather:
+    handler: src/weather.weather
+    events:
+      - schedule: rate(10 minutes)
+
 resources:
   Resources:
-    TodosDynamoDbTable:
+    SensorDynamoDbTable:
       Type: 'AWS::DynamoDB::Table'
       DeletionPolicy: Retain
       Properties:
@@ -40,4 +50,23 @@ resources:
         ProvisionedThroughput:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
-        TableName: ${self:provider.environment.DYNAMODB_TABLE}
+        TableName: ${self:provider.environment.SENSOR_TABLE}
+
+    WeatherDynamoDbTable:
+      Type: 'AWS::DynamoDB::Table'
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: location
+            AttributeType: S
+          - AttributeName: time
+            AttributeType: N
+        KeySchema:
+          - AttributeName: location
+            KeyType: HASH
+          - AttributeName: time
+            KeyType: RANGE
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: ${self:provider.environment.WEATHER_TABLE}

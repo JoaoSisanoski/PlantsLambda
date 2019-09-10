@@ -7,7 +7,7 @@ module.exports.create = async (event, context) => {
         const timestamp = new Date().getTime();
         const data = event;
         const params = {
-            TableName: process.env.DYNAMODB_TABLE,
+            TableName: process.env.SENSOR_TABLE,
             // Temp (C)	Humidity %	hum_1%	hum_2%	hum_3%	
             Item: {
                 air_temp: data.air_temp,

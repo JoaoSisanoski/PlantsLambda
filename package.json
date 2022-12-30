@@ -8,6 +8,6 @@
     "dark-sky": "^1.1.5"
   },
   "devDependencies": {
-    "mocha": "^6.2.0"
+    "mocha": "^10.2.0"
   }
 }
